@@ -1,40 +1,77 @@
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL;
 
-export async function apiGet<T>(
-  path: string
-): Promise<T> {
+function getApiBaseUrl() {
   if (!API_BASE_URL) {
     throw new Error(
       "Chưa cấu hình NEXT_PUBLIC_API_BASE_URL."
     );
   }
 
+  return API_BASE_URL;
+}
+
+async function readErrorMessage(
+  response: Response
+) {
+  let message =
+    `Backend trả về lỗi HTTP ${response.status}.`;
+
+  try {
+    const errorBody = await response.json();
+
+    if (typeof errorBody?.message === "string") {
+      message = errorBody.message;
+    }
+  } catch {
+    // Backend không trả về JSON.
+  }
+
+  return message;
+}
+
+export async function apiGet<T>(
+  path: string
+): Promise<T> {
   const response = await fetch(
-    `${API_BASE_URL}${path}`,
+    `${getApiBaseUrl()}${path}`,
     {
       cache: "no-store",
     }
   );
 
   if (!response.ok) {
-    let message =
-      `Backend trả về lỗi HTTP ${response.status}.`;
-
-    try {
-      const errorBody = await response.json();
-
-      if (
-        typeof errorBody?.message === "string"
-      ) {
-        message = errorBody.message;
-      }
-    } catch {
-      // Backend không trả về JSON.
-    }
-
-    throw new Error(message);
+    throw new Error(
+      await readErrorMessage(response)
+    );
   }
 
   return response.json() as Promise<T>;
+}
+
+export async function apiPost<
+  TResponse,
+  TRequest = unknown
+>(
+  path: string,
+  request: TRequest
+): Promise<TResponse> {
+  const response = await fetch(
+    `${getApiBaseUrl()}${path}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(request),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readErrorMessage(response)
+    );
+  }
+
+  return response.json() as Promise<TResponse>;
 }

@@ -6,6 +6,7 @@ import {
   Clock3,
   RefreshCw,
   Search,
+  Plus,
   Wrench,
 } from "lucide-react";
 import {
@@ -16,6 +17,7 @@ import {
 } from "react";
 import { apiGet } from "@/lib/api";
 import type { Asset } from "@/types/dashboard";
+import CreateAssetModal from "@/components/assets/CreateAssetModal";
 
 const statusLabels: Record<string, string> = {
   Available: "Sẵn sàng",
@@ -42,6 +44,8 @@ export default function AssetsPage() {
   const [keyword, setKeyword] = useState("");
   const [selectedStatus, setSelectedStatus] =
     useState("all");
+  const [createModalOpen, setCreateModalOpen] =
+  useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -142,14 +146,13 @@ export default function AssetsPage() {
         </div>
 
         <button
-          type="button"
-          disabled
-          title="Chức năng này sẽ được xây dựng ở bước tiếp theo"
-          className="flex cursor-not-allowed items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white opacity-60"
-        >
-          <Boxes size={18} />
-          Thêm tài sản
-        </button>
+            type="button"
+            onClick={() => setCreateModalOpen(true)}
+            className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            >
+            <Plus size={18} />
+            Thêm tài sản
+            </button>
       </section>
 
       {!loading && !error && (
@@ -479,7 +482,17 @@ export default function AssetsPage() {
             </div>
           </>
         )}
-      </section>
+        </section>
+      <CreateAssetModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onCreated={(createdAsset) => {
+          setAssets((currentAssets) => [
+            createdAsset,
+            ...currentAssets,
+          ]);
+        }}
+      />
     </div>
   );
 }
