@@ -6,6 +6,18 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+const string FrontendCorsPolicy = "FrontendCors";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(FrontendCorsPolicy, policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 builder.Services.AddOpenApi();
 
 var connectionString =
@@ -35,13 +47,15 @@ builder.Services.AddScoped<
     AssetHandoverService
 >();
 var app = builder.Build();
-
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
 // app.UseHttpsRedirection();
+app.UseCors(FrontendCorsPolicy);
+
+app.UseHttpsRedirection();
 
 app.MapControllers();
 
