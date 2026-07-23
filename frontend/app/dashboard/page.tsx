@@ -1,178 +1,399 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  Boxes,
+  CircleCheckBig,
+  ClipboardList,
+  RefreshCw,
+  Users,
+  Wrench,
+} from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { apiGet } from "@/lib/api";
+import type {
+  Asset,
+  AssetHandover,
+  Employee,
+} from "@/types/dashboard";
 
-type Asset = {
-  id: number;
-  assetCode: string;
-  name: string;
-  brand: string | null;
-  model: string | null;
-  statusValue: number;
-  status: string;
-  categoryCode: string;
-  categoryName: string;
+const handoverStatusLabels:
+  Record<string, string> = {
+    Draft: "Phiếu nháp",
+    Completed: "Đã bàn giao",
+    PartiallyReturned: "Đã trả một phần",
+    Returned: "Đã trả",
+    Cancelled: "Đã hủy",
+  };
+
+const handoverStatusClasses:
+  Record<string, string> = {
+    Draft:
+      "bg-amber-100 text-amber-700",
+    Completed:
+      "bg-blue-100 text-blue-700",
+    PartiallyReturned:
+      "bg-violet-100 text-violet-700",
+    Returned:
+      "bg-emerald-100 text-emerald-700",
+    Cancelled:
+      "bg-slate-200 text-slate-600",
+  };
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat(
+    "vi-VN",
+    {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }
+  ).format(new Date(value));
+}
+
+type StatisticCardProps = {
+  label: string;
+  value: number;
+  description: string;
+  icon: React.ComponentType<{
+    size?: number;
+  }>;
 };
 
-export default function Home() {
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+function StatisticCard({
+  label,
+  value,
+  description,
+  icon: Icon,
+}: StatisticCardProps) {
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-slate-500">
+            {label}
+          </p>
 
-  useEffect(() => {
-    async function fetchAssets() {
+          <p className="mt-2 text-3xl font-bold text-slate-950">
+            {value}
+          </p>
+
+          <p className="mt-2 text-xs text-slate-500">
+            {description}
+          </p>
+        </div>
+
+        <div className="rounded-xl bg-blue-50 p-3 text-blue-700">
+          <Icon size={22} />
+        </div>
+      </div>
+    </article>
+  );
+}
+
+export default function DashboardPage() {
+  const [assets, setAssets] =
+    useState<Asset[]>([]);
+  const [employees, setEmployees] =
+    useState<Employee[]>([]);
+  const [handovers, setHandovers] =
+    useState<AssetHandover[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
+  const [error, setError] =
+    useState("");
+
+  const loadDashboard = useCallback(
+    async () => {
+      setLoading(true);
+      setError("");
+
       try {
-        const apiBaseUrl =
-          process.env.NEXT_PUBLIC_API_BASE_URL;
+        const [
+          assetData,
+          employeeData,
+          handoverData,
+        ] = await Promise.all([
+          apiGet<Asset[]>("/api/assets"),
+          apiGet<Employee[]>(
+            "/api/employees"
+          ),
+          apiGet<AssetHandover[]>(
+            "/api/asset-handovers"
+          ),
+        ]);
 
-        if (!apiBaseUrl) {
-          throw new Error(
-            "Chưa cấu hình NEXT_PUBLIC_API_BASE_URL."
-          );
-        }
-
-        const response = await fetch(
-          `${apiBaseUrl}/api/assets`
-        );
-
-        if (!response.ok) {
-          throw new Error(
-            `Backend trả về lỗi HTTP ${response.status}.`
-          );
-        }
-
-        const data: Asset[] = await response.json();
-        setAssets(data);
+        setAssets(assetData);
+        setEmployees(employeeData);
+        setHandovers(handoverData);
       } catch (error: unknown) {
         setError(
           error instanceof Error
             ? error.message
-            : "Không thể kết nối đến Backend."
+            : "Không thể tải dữ liệu Dashboard."
         );
       } finally {
         setLoading(false);
       }
-    }
+    },
+    []
+  );
 
-    fetchAssets();
-  }, []);
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
+
+  const availableAssets =
+    assets.filter(
+      (asset) =>
+        asset.status === "Available"
+    ).length;
+
+  const inUseAssets =
+    assets.filter(
+      (asset) =>
+        asset.status === "InUse"
+    ).length;
+
+  const maintenanceAssets =
+    assets.filter(
+      (asset) =>
+        asset.status === "Maintenance"
+    ).length;
+
+  const activeEmployees =
+    employees.filter(
+      (employee) => employee.isActive
+    ).length;
+
+  const recentHandovers = useMemo(
+    () =>
+      [...handovers]
+        .sort(
+          (first, second) =>
+            new Date(
+              second.handoverDate
+            ).getTime() -
+            new Date(
+              first.handoverDate
+            ).getTime()
+        )
+        .slice(0, 5),
+    [handovers]
+  );
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6 md:p-10">
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-8 rounded-2xl bg-slate-900 p-8 text-white shadow-lg">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-blue-300">
-            AssetFlow
+    <div className="space-y-7">
+      <section className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-950">
+            Tổng quan hệ thống
+          </h2>
+
+          <p className="mt-1 text-sm text-slate-500">
+            Theo dõi tài sản, nhân viên và
+            hoạt động bàn giao
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() =>
+            void loadDashboard()
+          }
+          disabled={loading}
+          className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60"
+        >
+          <RefreshCw
+            size={17}
+            className={
+              loading
+                ? "animate-spin"
+                : ""
+            }
+          />
+
+          Làm mới dữ liệu
+        </button>
+      </section>
+
+      {error && (
+        <section className="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
+          <p className="font-semibold">
+            Không thể tải Dashboard
           </p>
 
-          <h1 className="text-3xl font-bold">
-            Hệ thống quản lý tài sản công ty
-          </h1>
-
-          <p className="mt-3 text-slate-300">
-            Next.js kết nối ASP.NET Core Web API
+          <p className="mt-1 text-sm">
+            {error}
           </p>
-        </header>
+        </section>
+      )}
 
-        <section className="rounded-2xl bg-white p-6 shadow-sm">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">
-                Danh sách tài sản
-              </h2>
+      {loading && !error && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
+          Đang tải dữ liệu tổng quan...
+        </section>
+      )}
+
+      {!loading && !error && (
+        <>
+          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            <StatisticCard
+              label="Tổng tài sản"
+              value={assets.length}
+              description="Tất cả thiết bị trong hệ thống"
+              icon={Boxes}
+            />
+
+            <StatisticCard
+              label="Sẵn sàng bàn giao"
+              value={availableAssets}
+              description="Tài sản có thể cấp phát"
+              icon={CircleCheckBig}
+            />
+
+            <StatisticCard
+              label="Đang sử dụng"
+              value={inUseAssets}
+              description="Tài sản đã bàn giao"
+              icon={Boxes}
+            />
+
+            <StatisticCard
+              label="Đang bảo trì"
+              value={maintenanceAssets}
+              description="Thiết bị cần kiểm tra"
+              icon={Wrench}
+            />
+
+            <StatisticCard
+              label="Nhân viên hoạt động"
+              value={activeEmployees}
+              description="Nhân viên có thể nhận tài sản"
+              icon={Users}
+            />
+
+            <StatisticCard
+              label="Phiếu bàn giao"
+              value={handovers.length}
+              description="Tổng số phiếu đã lập"
+              icon={ClipboardList}
+            />
+          </section>
+
+          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 p-6">
+              <h3 className="text-lg font-bold text-slate-950">
+                Phiếu bàn giao gần đây
+              </h3>
 
               <p className="mt-1 text-sm text-slate-500">
-                Dữ liệu được lấy trực tiếp từ Backend
+                Năm phiếu được lập gần nhất
               </p>
             </div>
 
-            {!loading && !error && (
-              <span className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
-                Đã kết nối API
-              </span>
-            )}
-          </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                    <th className="px-6 py-4">
+                      Mã phiếu
+                    </th>
 
-          {loading && (
-            <div className="rounded-xl bg-slate-50 p-5 text-slate-600">
-              Đang tải dữ liệu...
-            </div>
-          )}
+                    <th className="px-6 py-4">
+                      Nhân viên
+                    </th>
 
-          {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-700">
-              <p className="font-semibold">
-                Không thể kết nối Backend
-              </p>
+                    <th className="px-6 py-4">
+                      Ngày bàn giao
+                    </th>
 
-              <p className="mt-1 text-sm">{error}</p>
-            </div>
-          )}
+                    <th className="px-6 py-4">
+                      Số tài sản
+                    </th>
 
-          {!loading && !error && (
-            <>
-              <div className="mb-6 rounded-xl bg-blue-50 p-5">
-                <p className="text-sm font-medium text-blue-700">
-                  Tổng số tài sản
-                </p>
+                    <th className="px-6 py-4">
+                      Trạng thái
+                    </th>
+                  </tr>
+                </thead>
 
-                <p className="mt-1 text-3xl font-bold text-blue-950">
-                  {assets.length}
-                </p>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left">
-                  <thead>
-                    <tr className="border-b bg-slate-50 text-sm text-slate-600">
-                      <th className="p-4">Mã tài sản</th>
-                      <th className="p-4">Tên thiết bị</th>
-                      <th className="p-4">Hãng</th>
-                      <th className="p-4">Danh mục</th>
-                      <th className="p-4">Trạng thái</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {assets.map((asset) => (
+                <tbody>
+                  {recentHandovers.map(
+                    (handover) => (
                       <tr
-                        key={asset.id}
-                        className="border-b text-sm text-slate-700"
+                        key={handover.id}
+                        className="border-b text-sm text-slate-700 last:border-0"
                       >
-                        <td className="p-4 font-semibold text-blue-700">
-                          {asset.assetCode}
+                        <td className="px-6 py-4 font-semibold text-blue-700">
+                          {
+                            handover.handoverCode
+                          }
                         </td>
 
-                        <td className="p-4">{asset.name}</td>
+                        <td className="px-6 py-4">
+                          <p className="font-medium text-slate-900">
+                            {
+                              handover.employeeName
+                            }
+                          </p>
 
-                        <td className="p-4">
-                          {asset.brand ?? "—"}
+                          <p className="text-xs text-slate-500">
+                            {
+                              handover.employeeCode
+                            }
+                          </p>
                         </td>
 
-                        <td className="p-4">
-                          {asset.categoryName}
+                        <td className="px-6 py-4">
+                          {formatDate(
+                            handover.handoverDate
+                          )}
                         </td>
 
-                        <td className="p-4">
-                          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                            {asset.status}
+                        <td className="px-6 py-4">
+                          {
+                            handover.totalAssets
+                          }
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <span
+                            className={[
+                              "rounded-full px-3 py-1 text-xs font-semibold",
+                              handoverStatusClasses[
+                                handover.status
+                              ] ??
+                                "bg-slate-100 text-slate-700",
+                            ].join(" ")}
+                          >
+                            {handoverStatusLabels[
+                              handover.status
+                            ] ??
+                              handover.status}
                           </span>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    )
+                  )}
+                </tbody>
+              </table>
 
-                {assets.length === 0 && (
-                  <p className="py-10 text-center text-slate-500">
-                    Chưa có tài sản trong hệ thống.
-                  </p>
-                )}
-              </div>
-            </>
-          )}
-        </section>
-      </div>
-    </main>
+              {recentHandovers.length ===
+                0 && (
+                <p className="p-10 text-center text-sm text-slate-500">
+                  Chưa có phiếu bàn giao.
+                </p>
+              )}
+            </div>
+          </section>
+        </>
+      )}
+    </div>
   );
 }
