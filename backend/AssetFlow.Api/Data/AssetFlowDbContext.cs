@@ -14,6 +14,8 @@ public class AssetFlowDbContext : DbContext
     public DbSet<AssetCategory> AssetCategories => Set<AssetCategory>();
 
     public DbSet<Asset> Assets => Set<Asset>();
+    public DbSet<Employee> Employees =>
+    Set<Employee>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -43,5 +45,17 @@ public class AssetFlowDbContext : DbContext
             .WithMany(category => category.Assets)
             .HasForeignKey(asset => asset.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
-    }
+            
+        modelBuilder.Entity<Employee>()
+            .HasIndex(employee => employee.EmployeeCode)
+            .IsUnique();
+
+        modelBuilder.Entity<Employee>()
+            .HasIndex(employee => employee.Email)
+            .IsUnique()
+            .HasFilter("[Email] IS NOT NULL");
+
+        modelBuilder.Entity<Employee>()
+            .HasIndex(employee => employee.IsActive);
+            }
 }

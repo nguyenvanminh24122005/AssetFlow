@@ -26,6 +26,10 @@ builder.Services.AddScoped<
     IAssetService,
     AssetService
 >();
+builder.Services.AddScoped<
+    IEmployeeService,
+    EmployeeService
+>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
