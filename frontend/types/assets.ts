@@ -33,3 +33,36 @@ export type AssetFormState = {
   categoryId: string;
   description: string;
 };
+export type AssetDetail = {
+  id: number;
+  assetCode: string;
+  name: string;
+  serialNumber: string | null;
+  brand: string | null;
+  model: string | null;
+  purchaseDate: string | null;
+  purchasePrice: number;
+  warrantyExpirationDate: string | null;
+  statusValue: number;
+  status: string;
+  categoryId: number;
+  categoryCode: string;
+  categoryName: string;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+};
+
+export type UpdateAssetRequest = {
+  assetCode: string;
+  name: string;
+  serialNumber: string;
+  brand: string;
+  model: string;
+  purchaseDate: string;
+  purchasePrice: number;
+  warrantyExpirationDate: string;
+  categoryId: number;
+  status: number;
+  description: string;
+};

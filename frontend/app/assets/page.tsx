@@ -18,6 +18,8 @@ import {
 import { apiGet } from "@/lib/api";
 import type { Asset } from "@/types/dashboard";
 import CreateAssetModal from "@/components/assets/CreateAssetModal";
+import AssetDetailModal from "@/components/assets/AssetDetailModal";
+import type { AssetDetail } from "@/types/assets";
 
 const statusLabels: Record<string, string> = {
   Available: "Sẵn sàng",
@@ -45,7 +47,12 @@ export default function AssetsPage() {
   const [selectedStatus, setSelectedStatus] =
     useState("all");
   const [createModalOpen, setCreateModalOpen] =
-  useState(false);
+    useState(false);
+  const [selectedAssetId, setSelectedAssetId] =
+    useState<number | null>(null);
+
+  const [detailModalOpen, setDetailModalOpen] =
+    useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -451,10 +458,14 @@ export default function AssetsPage() {
                         <td className="px-6 py-4 text-right">
                           <button
                             type="button"
+                            onClick={() => {
+                                setSelectedAssetId(asset.id);
+                                setDetailModalOpen(true);
+                            }}
                             className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-                          >
+                            >
                             Chi tiết
-                          </button>
+                            </button>
                         </td>
                       </tr>
                     )
@@ -493,6 +504,43 @@ export default function AssetsPage() {
           ]);
         }}
       />
+      <AssetDetailModal
+        assetId={selectedAssetId}
+        open={detailModalOpen}
+        onClose={() => {
+            setDetailModalOpen(false);
+            setSelectedAssetId(null);
+        }}
+        onUpdated={(updatedAsset: AssetDetail) => {
+            setAssets((currentAssets) =>
+            currentAssets.map((asset) =>
+                asset.id === updatedAsset.id
+                ? {
+                    ...asset,
+                    assetCode:
+                        updatedAsset.assetCode,
+                    name:
+                        updatedAsset.name,
+                    brand:
+                        updatedAsset.brand,
+                    model:
+                        updatedAsset.model,
+                    statusValue:
+                        updatedAsset.statusValue,
+                    status:
+                        updatedAsset.status,
+                    categoryId:
+                        updatedAsset.categoryId,
+                    categoryCode:
+                        updatedAsset.categoryCode,
+                    categoryName:
+                        updatedAsset.categoryName,
+                    }
+                : asset
+            )
+            );
+        }}
+        />
     </div>
   );
 }
