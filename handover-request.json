@@ -1,0 +1,13 @@
+{
+    "handoverDate":  "2026-07-23T08:00:00",
+    "employeeId":  1,
+    "note":  "Bàn giao laptop phục vụ công việc",
+    "items":  [
+                  {
+                      "handoverNote":  "Máy hoạt động tốt, đầy đủ phụ kiện",
+                      "conditionAtHandover":  2,
+                      "assetId":  1
+                  }
+              ],
+    "handoverCode":  "BG-2026-002"
+}

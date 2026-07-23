@@ -30,6 +30,10 @@ builder.Services.AddScoped<
     IEmployeeService,
     EmployeeService
 >();
+builder.Services.AddScoped<
+    IAssetHandoverService,
+    AssetHandoverService
+>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

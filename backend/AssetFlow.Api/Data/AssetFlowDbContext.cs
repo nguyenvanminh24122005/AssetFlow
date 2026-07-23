@@ -16,6 +16,11 @@ public class AssetFlowDbContext : DbContext
     public DbSet<Asset> Assets => Set<Asset>();
     public DbSet<Employee> Employees =>
     Set<Employee>();
+    public DbSet<AssetHandover> AssetHandovers =>
+    Set<AssetHandover>();
+
+    public DbSet<AssetHandoverItem> AssetHandoverItems =>
+    Set<AssetHandoverItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -57,5 +62,40 @@ public class AssetFlowDbContext : DbContext
 
         modelBuilder.Entity<Employee>()
             .HasIndex(employee => employee.IsActive);
+        modelBuilder.Entity<AssetHandover>()
+            .HasIndex(handover => handover.HandoverCode)
+            .IsUnique();
+
+        modelBuilder.Entity<AssetHandover>()
+            .HasIndex(handover => handover.EmployeeId);
+
+        modelBuilder.Entity<AssetHandover>()
+            .HasIndex(handover => handover.Status);
+
+        modelBuilder.Entity<AssetHandover>()
+            .HasOne(handover => handover.Employee)
+            .WithMany()
+            .HasForeignKey(handover => handover.EmployeeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<AssetHandoverItem>()
+            .HasIndex(item => new
+            {
+                item.AssetHandoverId,
+                item.AssetId
+            })
+            .IsUnique();
+
+        modelBuilder.Entity<AssetHandoverItem>()
+            .HasOne(item => item.AssetHandover)
+            .WithMany(handover => handover.Items)
+            .HasForeignKey(item => item.AssetHandoverId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<AssetHandoverItem>()
+            .HasOne(item => item.Asset)
+            .WithMany()
+            .HasForeignKey(item => item.AssetId)
+            .OnDelete(DeleteBehavior.Restrict);
             }
 }
