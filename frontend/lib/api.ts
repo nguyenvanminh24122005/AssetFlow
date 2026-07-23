@@ -101,3 +101,25 @@ export async function apiPut<
 
   return response.json() as Promise<TResponse>;
 }
+export async function apiDelete<TResponse = void>(
+  path: string
+): Promise<TResponse> {
+  const response = await fetch(
+    `${getApiBaseUrl()}${path}`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await readErrorMessage(response)
+    );
+  }
+
+  if (response.status === 204) {
+    return undefined as TResponse;
+  }
+
+  return response.json() as Promise<TResponse>;
+}
