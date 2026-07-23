@@ -22,7 +22,10 @@ builder.Services.AddScoped<
     IAssetCategoryService,
     AssetCategoryService
 >();
-
+builder.Services.AddScoped<
+    IAssetService,
+    AssetService
+>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
